@@ -6,6 +6,7 @@ from openpathsampling.engines import features
 
 from ase.md.md import MolecularDynamics
 
+
 @attach_features([
     features.engine,
     features.velocities,
