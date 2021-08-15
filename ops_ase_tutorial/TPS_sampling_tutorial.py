@@ -10,10 +10,10 @@ from ase.build import molecule
 
 import sys
 sys.path.append("..")
-from ops_tutorial.ops_ase_test.engine import AseEngine
-from ops_tutorial.ops_ase_test.topology import AseTopology as Topology
+from ops_ase.engine import AseEngine
+from ops_ase.topology import AseTopology as Topology
 import openpathsampling as ops
-
+from ase.calculators.lj import LennardJones
 
 # %matplotlib inline
 import matplotlib.pyplot as plt
@@ -23,27 +23,18 @@ from openmmtools.integrators import VVVRIntegrator
 
 import os
 # initial_pdb = os.path.join("AD_initial_frame.pdb")
-atoms = read(filename=Path(__file__).parent.parent/"AD_initial_frame.pdb")
+atoms = read(filename=Path(__file__).parent.parent/"original_tutorial"/"AD_initial_frame.pdb")
+atoms.calc = LennardJones()
 
-hi_T_integrator = Langevin(atoms=atoms, timestep=1*units.fs, temperature_K=300, friction=0.01, logfile='./md.log')
-
-
-# hi_T_integrator.run(10)
-# hi_T_integrator.attach(MDLogger(hi_T_integrator, atoms_calc, 'md.log', header=False, stress=False, peratom=True, mode='a'), interval=1000)
-
-topology= Topology(
-    n_spatial = 2,
-    masses =[1.0, 1.0]
-)
+hi_T_integrator = Langevin(atoms=atoms, timestep=2*units.fs, temperature_K=500, friction=0.001, logfile='./md.log')
 
 engine_options = {
     'n_steps_per_frame': 10,
-    'n_frames_max': 100
+    'n_frames_max': 6000
 }
 hi_T_engine = AseEngine(
     hi_T_integrator,
     options=engine_options,
-    topology=topology
 )
 current_snapshot = hi_T_engine.current_snapshot
 # hi_T_engine.minimize()
@@ -119,6 +110,9 @@ for ens in tmp_network.analysis_ensembles:
     subtrajectories += ens.split(trajectory)
 print(subtrajectories)
 
-plt.plot(phi(trajectory), psi(trajectory), 'k.')
-plt.plot(phi(subtrajectories[0]), psi(subtrajectories[0]), 'r')
+plt.plot(phi(trajectory)  * deg, psi(trajectory) * deg, 'k.')
+plt.plot(phi(subtrajectories[0]) * deg, psi(subtrajectories[0])  * deg, 'r')
+plt.xlabel('phi', fontsize=18)
+plt.ylabel('psi', fontsize=18)
+
 plt.show()

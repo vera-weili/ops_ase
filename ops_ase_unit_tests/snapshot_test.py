@@ -16,4 +16,5 @@ class AseSanpshotTest(TestCase):
 
     def test_get_dihedrals(self):
         snapshot = AseSnapshot(integrator=self.mock_integrator)
-        snapshot.get_dihedrals(indices=[[0, 1, 2, 3]])
+        dihedrals = snapshot.get_dihedrals(indices=[[0, 1, 2, 3]])
+        self.assertEqual(dihedrals, 1)

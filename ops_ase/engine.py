@@ -1,20 +1,25 @@
-from openpathsampling.engines import DynamicsEngine, features, SnapshotDescriptor
-from ase.md.md import MolecularDynamics
+from typing import Dict, Optional
 
-from ops_ase.snapshot import AseSnapshot as SnapShot
+from openpathsampling.engines import DynamicsEngine as OpsDynamicsEngine
+from ase.md.md import MolecularDynamics as AseMolecularDynamics
+
+from ops_ase.snapshot import AseSnapshot
 
 
-class AseEngine(DynamicsEngine):
+class AseEngine(OpsDynamicsEngine):
 
-    base_snapshot_type = SnapShot
+    base_snapshot_type = AseSnapshot
     _default_options = {
         'n_steps_per_frame': 10,
         'n_frames_max': 100,
     }
 
-    def __init__(self, integrator: MolecularDynamics, options=None, topology=None):
+    def __init__(self, integrator: AseMolecularDynamics, options: Optional[Dict] = None):
+        """
+            options : dict of { str : value }, a dictionary
+        """
         self.integrator = integrator
-        self.topology = topology
+        self.topology = None
 
         # descriptor = SnapshotDescriptor.construct(
         #     snapshot_class=SnapShot,
@@ -25,10 +30,11 @@ class AseEngine(DynamicsEngine):
         self.positions = None
         self.velocities = None
         # self.topology = None
-        self._current_snapshot = self._update_current_snapshot()
+        self._current_snapshot = None
+        self._update_current_snapshot()
 
     @property
-    def current_snapshot(self) -> SnapShot:
+    def current_snapshot(self) -> AseSnapshot:
         """
         current_snapshot velocities and coordinates are obtained from ase Atoms object
         Returns
@@ -37,15 +43,18 @@ class AseEngine(DynamicsEngine):
         return self._current_snapshot
 
     @current_snapshot.setter
-    def current_snapshot(self, snapshot: SnapShot) -> None:
+    def current_snapshot(self, snapshot: AseSnapshot) -> None:
         self.check_snapshot_type(snapshot)
         self.positions = snapshot.coordinates
         self.velocities = snapshot.velocities
         self._current_snapshot = self._update_current_snapshot()
 
-    def _update_current_snapshot(self) -> SnapShot:
+    def _update_current_snapshot(self) -> None:
+        """
+        Update self._current_snapshot using self.integrator
+        """
         atoms_object = self.integrator.atoms
-        return SnapShot(
+        self._current_snapshot = AseSnapshot(
             integrator=self.integrator,
             velocities=atoms_object.get_velocities,
             coordinates=atoms_object.get_positions,
@@ -62,6 +71,19 @@ class AseEngine(DynamicsEngine):
     @property
     def snapshot_timestep(self):
         return self.n_steps_per_frame * self.integrator.dt
+
+    def generate_next_frame(self) -> AseSnapshot:
+        """
+
+        Returns: a series of current_snapshot944- to form a trajectory
+        -------
+
+        """
+        # self.integrator.run(self.n_steps_per_frame)
+        for _ in range(self.n_steps_per_frame):
+            self.integrator.step()
+        self._update_current_snapshot()
+        return self.current_snapshot
 
     # def _velocities_update(self, delta_t):  # ToDo: decide how to update velocites
     #     pass
@@ -94,14 +116,3 @@ class AseEngine(DynamicsEngine):
     #     self._positions_update(snapshot, 0.5 * self.integrator.timestep)  # ToDo: decide how to set/use self.dt, or use itegrator's timestep?
     #     self._velocities_udpate(snapshot, self.delta_t)
 
-    def generate_next_frame(self) -> SnapShot:
-        """
-
-        Returns: a series of current_snapshot944- to form a trajectory
-        -------
-
-        """
-        # self.integrator.run(self.n_steps_per_frame)
-        self.integrator.step()
-        self.current_snapshot = self.integrator.atoms
-        return self.current_snapshot

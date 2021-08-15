@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../ase/.idea/ase.iml" filepath="$PROJECT_DIR$/../ase/.idea/ase.iml" />
       <module fileurl="file://$PROJECT_DIR$/../openmm/.idea/openmm.iml" filepath="$PROJECT_DIR$/../openmm/.idea/openmm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../openpathsampling/openpathsampling/.idea/openpathsampling.iml" filepath="$PROJECT_DIR$/../openpathsampling/openpathsampling/.idea/openpathsampling.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ops_ase.iml" filepath="$PROJECT_DIR$/.idea/ops_ase.iml" />
     </modules>
   </component>
