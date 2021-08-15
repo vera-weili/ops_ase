@@ -1,7 +1,7 @@
 from openpathsampling.engines import DynamicsEngine, features, SnapshotDescriptor
 from ase.md.md import MolecularDynamics
 
-from ops_tutorial.ops_ase_test.snapshot import AseSnapshot as SnapShot
+from ops_ase.snapshot import AseSnapshot as SnapShot
 
 
 class AseEngine(DynamicsEngine):
