@@ -13,7 +13,7 @@ import openmmtools
 
 import openpathsampling as paths
 import openpathsampling.engines.openmm as ops_openmm
-
+import openpathsampling.engines.openmm as omm
 import mdtraj as md
 
 
@@ -74,6 +74,8 @@ def get_states(phi, psi):
 
 def run():
     # this cell is all OpenMM specific
+    import os
+    initial_pdb = os.path.join("AD_initial_frame.pdb")
     forcefield = app.ForceField('amber96.xml', 'tip3p.xml')
     system = forcefield.createSystem(
         topology=app.PDBFile("AD_initial_frame.pdb").topology,
@@ -106,18 +108,23 @@ def run():
 
     C_7eq, alpha_R = get_states(phi, psi)
 
-    network = paths.TPSNetwork(initial_states=C_7eq, final_states=alpha_R)
-    scheme = paths.OneWayShootingMoveScheme(network=network,
-                                            selector=paths.UniformSelector(),
-                                            engine=engine).named("tps_scheme")
+    template = omm.snapshot_from_pdb(initial_pdb)
+    init_traj_storage = paths.Storage("initial_trajectory.nc", 'w', template=template)
 
-    init_traj_storage = paths.Storage("../ops_ase_tutorial/initial_trajectory.nc", 'r')
-    init_traj = init_traj_storage.trajectories[0]
+    visit_all = paths.VisitAllStatesEnsemble([C_7eq, alpha_R])
 
-    plt.plot(phi(init_traj), psi(init_traj))
-    plt.xlabel("$\phi$")
-    plt.ylabel("$\psi$");
-    plt.show()
+    trajectory = engine.generate(snapshot=engine.current_snapshot, running=[visit_all.can_append])
+
+    # # # create a network so we can use its ensemble to obtain an initial trajectory
+    # # # use all-to-all because initial traj can be A->B or B->A; will be reversed
+    # tmp_network = paths.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
+    print(init_traj_storage.list_stores())
+    # init_traj = init_traj_storage.trajectories[0]
+    #
+    # plt.plot(phi(init_traj), psi(init_traj))
+    # plt.xlabel("$\phi$")
+    # plt.ylabel("$\psi$");
+    # plt.show()
 
 
 if __name__ == "__main__":

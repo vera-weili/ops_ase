@@ -1,10 +1,12 @@
 from __future__ import print_function
 from typing import List
 from pathlib import Path
+import re
 
 import numpy as np
 from ase.io import read, write
 from ase.md import VelocityVerlet, MDLogger, Langevin
+from ase.calculators.lj import LennardJones
 import ase.units as units
 from ase.build import molecule
 
@@ -13,8 +15,8 @@ sys.path.append("..")
 from ops_ase.engine import AseEngine
 from ops_ase.topology import AseTopology as Topology
 import openpathsampling as ops
-from ase.calculators.lj import LennardJones
 
+import openpathsampling.engines.openmm as ops_openmm
 # %matplotlib inline
 import matplotlib.pyplot as plt
 
@@ -23,31 +25,23 @@ from openmmtools.integrators import VVVRIntegrator
 
 import os
 # initial_pdb = os.path.join("AD_initial_frame.pdb")
-atoms = read(filename=Path(__file__).parent.parent/"original_tutorial"/"AD_initial_frame.pdb")
+atoms = read(filename=Path(__file__).parent.parent/"original_tutorial"/"AD_initial_frame_without_water.pdb")
 atoms.calc = LennardJones()
 
-hi_T_integrator = Langevin(atoms=atoms, timestep=2*units.fs, temperature_K=500, friction=0.001, logfile='./md.log')
+hi_T_integrator = Langevin(atoms=atoms, timestep=0.25*units.fs, temperature_K=300, friction=0.01, logfile='./md.log')
 
+ops_topology = ops_openmm.tools.topology_from_pdb("../ops_ase_tutorial/AD_initial_frame_without_water.pdb")
 engine_options = {
     'n_steps_per_frame': 10,
     'n_frames_max': 6000
 }
 hi_T_engine = AseEngine(
+    ops_topology,
     hi_T_integrator,
     options=engine_options,
 )
 current_snapshot = hi_T_engine.current_snapshot
 # hi_T_engine.minimize()
-
-# define the CVs
-# def func(atoms: Atoms, indices: List[List[int]]):
-#     return atoms.get_dihedrals(indices)
-#
-#
-# psi = ops.CoordinateFunctionCV(name="psi", f=func, indices=[[6, 8, 14, 16]]).enable_diskcache()
-# phi = ops.CoordinateFunctionCV(name="phi", f=func, indices=[[4, 6, 8, 14]]).enable_diskcache()
-
-# define the CVs
 
 deg = 180.0/np.pi
 
@@ -58,8 +52,6 @@ def wrap_pi_to_pi(x):
 def f(atoms, indices):
     radian=atoms.get_dihedrals(indices) / deg
     return wrap_pi_to_pi(radian)
-
-print(f(atoms=atoms, indices=[[4, 6, 8, 14]]))
 
 psi = ops.FunctionCV(name="psi",
                      f=f,
@@ -75,8 +67,6 @@ phi = ops.FunctionCV(name="phi",
                      cv_wrap_numpy_array=True,
                      cv_scalarize_numpy_singletons=True
                      ).enable_diskcache()
-#
-
 
 # define the states
 deg = 180.0/np.pi
@@ -98,13 +88,44 @@ alpha_R = (
 visit_all = ops.VisitAllStatesEnsemble([C_7eq, alpha_R])
 
 trajectory = hi_T_engine.generate(snapshot=hi_T_engine.current_snapshot, running=[visit_all.can_append])
+# atoms_obj=trajectory[1].integrator.atoms
+
+for i in range(trajectory.n_snapshots):
+    snapshot=trajectory[i]
+    atoms=snapshot.atoms
+    lattic = atoms.cell.array
+    symbol = atoms.symbols
+    symbol_count = [1 for i in range(len(list(symbol)))]
+    system = 'AD_withoutwater'
+    systemsize = "1.00000"
+    Cartesian = 'Cartesian'
+    position = atoms.get_positions()
+
+    s = (system + '\n')
+    s += (systemsize + '\n')
+
+    s += (re.sub('[\[\]]', '', np.array_str(lattic, precision=8)) + '\n')
+
+    s += (" ".join(list(symbol)) + '\n')
+    s += (" ".join([str(s) for s in symbol_count]) + '\n')
+    s += (Cartesian + '\n')
+
+    s += (re.sub('[\[\]]', '', np.array_str(position, precision=8, suppress_small=True)) + '\n')
+
+    with open(f"POSCAR_{i}.vasp", 'w') as file:
+        file.write(s)
 
 # # # create a network so we can use its ensemble to obtain an initial trajectory
 # # # use all-to-all because initial traj can be A->B or B->A; will be reversed
 tmp_network = ops.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
-
-
-# take the subtrajectory matching the ensemble (only one ensemble, only one subtraj)
+#
+# init_traj_storage = ops.Storage("initial_trajectory.nc", 'w', template=current_snapshot)
+# init_traj_storage.save(trajectory)
+#
+# #
+# # print(init_traj_storage.engines)
+# # print(init_traj_storage.snapshots[3])
+# # take the subtrajectory matching the ensemble (only one ensemble, only one subtraj)
 subtrajectories = []
 for ens in tmp_network.analysis_ensembles:
     subtrajectories += ens.split(trajectory)
