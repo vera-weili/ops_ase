@@ -35,7 +35,7 @@ vp.camera_dir = (2, 3, -3)
 # for i in range(10):
 #     vp.render_image(size=(800,600), filename=f"figure{i}.png", background=(0,0,0), frame=i)
 
-vp.render_anim(size=(500, 500), filename="figure.mp4", background=(0,0,0), range=[0, 300], fps=30)
+vp.render_anim(size=(500, 500), filename="figure.mp4", background=(0,0,0), range=[0, 2000], fps=30)
 
 pass
 

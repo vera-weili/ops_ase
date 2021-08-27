@@ -13,3 +13,4 @@ dependencies:
   - tqdm
   - nglview
   - ase
+  - ovito

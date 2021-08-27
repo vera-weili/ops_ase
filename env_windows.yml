@@ -12,5 +12,6 @@ dependencies:
   - tqdm
   - nglview
   - ase
+  - ovito
   - pip:
     - openpathsampling
