@@ -5,6 +5,7 @@
 .idea/
 .idea
 .DS_Store
+POSCAR*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
