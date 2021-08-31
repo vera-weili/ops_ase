@@ -115,9 +115,11 @@ for i in range(trajectory.n_snapshots):
     with open(f"POSCAR_{i}.vasp", 'w') as file:
         file.write(s)
 
+
+tmp_network=ops.FixedLengthTPSNetwork(C_7eq, alpha_R, length=1000)
 # # # create a network so we can use its ensemble to obtain an initial trajectory
 # # # use all-to-all because initial traj can be A->B or B->A; will be reversed
-tmp_network = ops.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
+# tmp_network = ops.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
 #
 # init_traj_storage = ops.Storage("initial_trajectory.nc", 'w', template=current_snapshot)
 # init_traj_storage.save(trajectory)
@@ -132,7 +134,7 @@ for ens in tmp_network.analysis_ensembles:
 print(subtrajectories)
 
 plt.plot(phi(trajectory)  * deg, psi(trajectory) * deg, 'k.')
-plt.plot(phi(subtrajectories[0]) * deg, psi(subtrajectories[0])  * deg, 'r')
+# plt.plot(phi(subtrajectories[0]) * deg, psi(subtrajectories[0])  * deg, 'r')
 plt.xlabel('phi', fontsize=18)
 plt.ylabel('psi', fontsize=18)
 
