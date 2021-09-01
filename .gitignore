@@ -1,5 +1,7 @@
 # POSCAR folder
-
+POSCAR_HIPNN
+POSCAR_LJ
+POSCAR_QM7
 
 # Pycharm configs
 .idea/

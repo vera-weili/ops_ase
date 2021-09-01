@@ -118,7 +118,7 @@ def run():
     # # # create a network so we can use its ensemble to obtain an initial trajectory
     # # # use all-to-all because initial traj can be A->B or B->A; will be reversed
     # tmp_network = paths.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
-    print(init_traj_storage.list_stores())
+    # print(init_traj_storage.list_stores())
     # init_traj = init_traj_storage.trajectories[0]
     #
     # plt.plot(phi(init_traj), psi(init_traj))
