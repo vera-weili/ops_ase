@@ -32,7 +32,6 @@ atoms.calc = LennardJones()
 hi_T_integrator = Langevin(atoms=atoms, timestep=0.25 * units.fs, temperature_K=500, friction=0.01, logfile='./md.log')
 deg = 180.0 / np.pi
 
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQmr2kjnzCPQwSr96d0aWaSL7uFpkEFUaK0o48hfptxoyPOFWZbkXkPRbbXyPaTMbN8EJoilhscLWGHFH5NbwWqSJERnyXxsCOxBa21Ri+zMNWcSOcfv/qfsO9/TbE0f1eOVfstukR1spAWFEw/efbyIDJHfW8sK55IbYkvSV8QCxbqtRSw20YJumdERZ/6moU27kkLB9M39NgLxXr8L3nCst1fqphpkpQ5a6+hpW75bTHg+0oZgSBQ45QmcnvS49zhmsUGspaReqiM7Td666D6AZmNqq1yU1yhGQ+zN0CTc1qWIb2QL397EKtsdGn0Rt5/zB6nPp4A3FL8g1pXSVv wei_li@lanl.gov
 
 def get_engine():
     ops_topology = ops_openmm.tools.topology_from_pdb("../ops_ase_tutorial/AD_initial_frame_without_water.pdb")
