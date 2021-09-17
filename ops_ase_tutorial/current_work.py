@@ -29,9 +29,10 @@ import os
 atoms = read(filename=Path(__file__).parent.parent / "original_tutorial" / "AD_initial_frame_without_water.pdb")
 atoms.calc = LennardJones()
 
-hi_T_integrator = Langevin(atoms=atoms, timestep=2 * units.fs, temperature_K=500, friction=0.01, logfile='./md.log')
+hi_T_integrator = Langevin(atoms=atoms, timestep=0.25 * units.fs, temperature_K=500, friction=0.01, logfile='./md.log')
 deg = 180.0 / np.pi
 
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQmr2kjnzCPQwSr96d0aWaSL7uFpkEFUaK0o48hfptxoyPOFWZbkXkPRbbXyPaTMbN8EJoilhscLWGHFH5NbwWqSJERnyXxsCOxBa21Ri+zMNWcSOcfv/qfsO9/TbE0f1eOVfstukR1spAWFEw/efbyIDJHfW8sK55IbYkvSV8QCxbqtRSw20YJumdERZ/6moU27kkLB9M39NgLxXr8L3nCst1fqphpkpQ5a6+hpW75bTHg+0oZgSBQ45QmcnvS49zhmsUGspaReqiM7Td666D6AZmNqq1yU1yhGQ+zN0CTc1qWIb2QL397EKtsdGn0Rt5/zB6nPp4A3FL8g1pXSVv wei_li@lanl.gov
 
 def get_engine():
     ops_topology = ops_openmm.tools.topology_from_pdb("../ops_ase_tutorial/AD_initial_frame_without_water.pdb")
@@ -60,7 +61,7 @@ def f(atoms, indices):
     return wrap_pi_to_pi(radian)
 
 
-def get_states():
+def get_CVs():
     psi = ops.FunctionCV(name="psi",
                          f=f,
                          indices=[[6, 8, 14, 16]],
@@ -76,8 +77,10 @@ def get_states():
                          cv_scalarize_numpy_singletons=True
                          ).enable_diskcache()
 
+    return psi, phi
     # define the states
-
+def get_states():
+    psi, phi = get_CVs()
     C_7eq = (
             ops.PeriodicCVDefinedVolume(phi, lambda_min=-180 / deg, lambda_max=0 / deg,
                                         period_min=-np.pi, period_max=np.pi) &
@@ -97,15 +100,30 @@ def get_states():
 
 def get_trajectory():
     engine = get_engine()
-    states = get_states()
+    psi, phi = get_CVs()
+    C_7eq, alpha_R = get_states()
     current_snapshot = engine.current_snapshot
     # visit_all = ops.VisitAllStatesEnsemble([C_7eq, alpha_R])
     # trajectory = hi_T_engine.generate(snapshot=hi_T_engine.current_snapshot, running=[visit_all.can_append])
-    visit_all = ops.VisitAllStatesEnsemble([states])
+    visit_all = ops.VisitAllStatesEnsemble([C_7eq, alpha_R])
     trajectory = engine.generate(snapshot=engine.current_snapshot, running=[visit_all.can_append])
 
-    # atoms_obj=trajectory[1].integrator.atoms
+    tmp_network = ops.TPSNetwork.from_states_all_to_all([C_7eq, alpha_R])
+    subtrajectories = []
+    for ens in tmp_network.analysis_ensembles:
+        subtrajectories += ens.split(trajectory)
+    print(subtrajectories)
 
+    plt.plot(phi(trajectory)  * deg, psi(trajectory) * deg, 'k.')
+    plt.plot(phi(subtrajectories[0]) * deg, psi(subtrajectories[0])  * deg, 'r')
+    plt.xlabel('phi', fontsize=18)
+    plt.ylabel('psi', fontsize=18)
+    plt.show()
+    # atoms_obj=trajectory[1].integrator.atoms
+    return trajectory
+
+def write_POSCARs():
+    trajectory = get_trajectory()
     for i in range(trajectory.n_snapshots):
         atoms = trajectory[i].integrator.atoms
         lattic = atoms.cell.array
@@ -132,6 +150,7 @@ def get_trajectory():
 
 
 if __name__ == "__main__":
+
     get_trajectory()
 # # # create a network so we can use its ensemble to obtain an initial trajectory
 # # # use all-to-all because initial traj can be A->B or B->A; will be reversed

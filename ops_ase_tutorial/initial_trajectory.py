@@ -28,7 +28,7 @@ import os
 atoms = read(filename=Path(__file__).parent.parent/"original_tutorial"/"AD_initial_frame_without_water.pdb")
 atoms.calc = LennardJones()
 
-hi_T_integrator = Langevin(atoms=atoms, timestep=0.25*units.fs, temperature_K=300, friction=0.01, logfile='./md.log')
+hi_T_integrator = Langevin(atoms=atoms, timestep=2.0*units.fs, temperature_K=500, friction=0.01, logfile='./md.log')
 
 ops_topology = ops_openmm.tools.topology_from_pdb("../ops_ase_tutorial/AD_initial_frame_without_water.pdb")
 engine_options = {
